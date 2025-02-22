@@ -7,6 +7,34 @@ using System.Text.RegularExpressions;
 
 class Program
 {
+    static readonly string IconsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icons");
+    
+    static string GetIconOrFallback(string iconName, string fallbackEmoji)
+    {
+        try
+        {
+            string iconPath = Path.Combine(IconsPath, $"{iconName}.png");
+            if (File.Exists(iconPath))
+            {
+                byte[] imageBytes = File.ReadAllBytes(iconPath);
+                string base64Image = Convert.ToBase64String(imageBytes);
+                
+                // Intentar protocolo Kitty primero (para Ghostty)
+                string kittyProtocol = $"\x1b_Ga=T,f=100,s={imageBytes.Length};{base64Image}\x1b\\";
+                
+                // Fallback a iTerm2 si Kitty no funciona
+                string iterm2Protocol = $"\u001B]1337;File=inline=1:{base64Image}\u0007";
+                
+                return kittyProtocol + iterm2Protocol;
+            }
+        }
+        catch
+        {
+            // Si algo falla, usar el emoji
+        }
+        return fallbackEmoji;
+    }
+
     static ConsoleColor GetUserColor(string username)
     {
         ConsoleColor[] colors =
@@ -102,12 +130,10 @@ class Program
                     if (message.Contains("badges="))
                     {
                         var badgePart = message.Split("badges=")[1].Split(";")[0];
-                        if (badgePart.Contains("moderator")) badges += "🛡️ ";
-                        if (badgePart.Contains("subscriber")) badges += "⭐ ";
-                        if (badgePart.Contains("vip")) badges += "💎 ";
+                        if (badgePart.Contains("moderator")) badges += GetIconOrFallback("moderator", "🛡️ ");
+                        if (badgePart.Contains("sub")) badges += GetIconOrFallback("sub", "⭐ ");
+                        if (badgePart.Contains("vip")) badges += GetIconOrFallback("vip", "💎 ");
                     }
-
-
 
                     if (message.Contains("display-name="))
                     {
@@ -122,8 +148,6 @@ class Program
                     }
 
                     if (string.IsNullOrEmpty(username)) continue;
-
-                   
 
                     Console.Write($"[{DateTime.Now:HH:mm:ss}] ");
 
