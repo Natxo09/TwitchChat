@@ -53,19 +53,20 @@ public class TranslationService
         // No traducir mensajes muy largos para evitar ralentizar el chat
         if (message.Length > _config.MaxMessageLength)
         {
-            if (_config.DebugMode)
-                WriteDebug($"Mensaje demasiado largo para traducir ({message.Length} caracteres)");
+            if (_config.DebugMode) WriteDebug($"Mensaje demasiado largo para traducir ({message.Length} caracteres)");
             return message;
         }
         
         // Verificar si el mensaje ya está en caché
         if (_translationCache.TryGetValue(message, out string? cachedTranslation))
         {
-            if (_config.DebugMode)
-                WriteDebug($"Usando traducción en caché");
+            if (_config.DebugMode) WriteDebug($"Usando traducción en caché");
             return cachedTranslation;
         }
 
+        // Solo mostrar mensajes de depuración si está activado el modo debug
+        if (_config.DebugMode) WriteDebug($"Traduciendo mensaje: {message}");
+        
         try
         {
             if (_config.DebugMode)
@@ -74,9 +75,14 @@ public class TranslationService
             // Verificar si el mensaje parece estar en inglés y el idioma destino es inglés
             if (_config.TargetLanguage == "English" && IsLikelyEnglish(message))
             {
-                if (_config.DebugMode)
-                    WriteDebug($"El mensaje parece estar ya en inglés, omitiendo traducción");
+                if (_config.DebugMode) WriteDebug($"El mensaje parece estar ya en inglés, omitiendo traducción");
                 return message;
+            }
+            
+            // Asegurarse de que los mensajes cortos también se traducen
+            if (message.Length < 5 && !ContainsOnlyEmotesOrCommands(message))
+            {
+                if (_config.DebugMode) WriteDebug($"Mensaje corto, forzando traducción: {message}");
             }
             
             // Prompt más estricto para asegurar traducción literal
@@ -85,7 +91,7 @@ public class TranslationService
                 model = "default",
                 messages = new[]
                 {
-                    new { role = "system", content = $"INSTRUCCIONES ESTRICTAS: Detecta automáticamente el idioma del mensaje y tradúcelo a {_config.TargetLanguage}. Estás traduciendo mensajes de chat de Twitch que contienen jerga de videojuegos, emotes, memes y expresiones coloquiales. SOLO debes traducir el texto EXACTAMENTE como está, sin añadir NADA. NO añadas emojis, emoticones, símbolos, puntuación extra o cualquier otro elemento que no esté en el mensaje original. Mantén EXACTAMENTE los mismos emotes de Twitch (como Kappa, PogChamp, LUL, etc.), comandos (como !uptime, !commands), hashtags y menciones (@usuario) que aparezcan en el mensaje original. NO traduzcas nombres propios, nombres de juegos, o términos técnicos específicos. Respeta mayúsculas/minúsculas del original cuando sea posible. Tu respuesta debe contener ÚNICAMENTE la traducción literal. Si el mensaje ya está en {_config.TargetLanguage} o solo contiene emotes/comandos, devuélvelo exactamente igual sin cambios." },
+                    new { role = "system", content = $"TAREA: Traduce este mensaje de Twitch al {_config.TargetLanguage}. REGLAS: 1) Mantén emotes, comandos, hashtags y @menciones exactamente igual. 2) NO traduzcas nombres propios, marcas o términos técnicos. 3) Si el mensaje ya está en {_config.TargetLanguage}, devuélvelo sin cambios. 4) Traduce incluso mensajes cortos o slang. 5) NO añadas NADA que no esté en el original (ni emojis, ni puntuación extra). IMPORTANTE: Tu respuesta debe contener SOLO la traducción, nada más." },
                     new { role = "user", content = message }
                 },
                 temperature = 0.1,
@@ -175,16 +181,15 @@ public class TranslationService
     {
         try
         {
-            if (_config.DebugMode)
-                WriteDebug($"Reintentando traducción con prompt simplificado");
+            if (_config.DebugMode) WriteDebug($"Reintentando traducción con prompt simplificado");
             
-            // Prompt más directo y simplificado para el segundo intento
+            // Prompt extremadamente directo para forzar la traducción
             var requestData = new
             {
                 model = "default",
                 messages = new[]
                 {
-                    new { role = "system", content = $"Traduce este texto de forma literal a {_config.TargetLanguage}. Mantén todos los emotes, comandos y menciones exactamente igual. No añadas nada. Solo devuelve la traducción, nada más." },
+                    new { role = "system", content = $"Traduce este texto exactamente al {_config.TargetLanguage}, incluso si contiene nombres propios o términos técnicos. No omitas ninguna parte. Responde SOLO con la traducción." },
                     new { role = "user", content = message }
                 },
                 temperature = 0.1,
@@ -219,8 +224,7 @@ public class TranslationService
         }
         catch (Exception ex)
         {
-            if (_config.DebugMode)
-                WriteDebug($"Error en segundo intento: {ex.Message}");
+            if (_config.DebugMode) WriteDebug($"Error en segundo intento: {ex.Message}");
         }
         
         return message;
@@ -340,5 +344,14 @@ public class TranslationService
             Console.WriteLine($"[ERROR] {message}");
             Console.ForegroundColor = originalColor;
         }
+    }
+
+    public void UpdateTargetLanguage(string targetLanguage)
+    {
+        // Limpiar la caché cuando cambia el idioma objetivo
+        _translationCache.Clear();
+        
+        // Mostrar siempre este mensaje, incluso sin modo debug
+        Console.WriteLine($"[INFO] Idioma objetivo actualizado a: {targetLanguage}");
     }
 } 

@@ -243,12 +243,6 @@ class Program
                     
                 case '2':
                     ShowLanguageOptions();
-                    PrintColorText("Select a language (1-10): ", OptionColor);
-                    if (int.TryParse(Console.ReadLine(), out int langIndex) && 
-                        langIndex >= 1 && langIndex <= _availableLanguages.Count)
-                    {
-                        _config.TargetLanguage = _availableLanguages[langIndex - 1];
-                    }
                     break;
                     
                 case '3':
@@ -337,12 +331,36 @@ class Program
     
     private static void ShowLanguageOptions()
     {
-        Console.WriteLine("\nAvailable Languages:");
+        Console.Clear();
+        Console.WriteLine("\nSelecciona el idioma objetivo para la traducción:");
+        
         for (int i = 0; i < _availableLanguages.Count; i++)
         {
-            PrintMenuOption($"{i + 1}", _availableLanguages[i]);
+            string marker = _config.TargetLanguage == _availableLanguages[i] ? "✓ " : "  ";
+            PrintMenuOption($"{i + 1}", $"{marker}{_availableLanguages[i]}");
         }
+        
         Console.WriteLine();
+        PrintColorText("Selecciona un idioma (1-10) o presiona 'Enter' para volver: ", OptionColor);
+        
+        string? input = Console.ReadLine();
+        if (!string.IsNullOrWhiteSpace(input) && int.TryParse(input, out int langIndex) && 
+            langIndex >= 1 && langIndex <= _availableLanguages.Count)
+        {
+            string newLanguage = _availableLanguages[langIndex - 1];
+            if (_config.TargetLanguage != newLanguage)
+            {
+                _config.TargetLanguage = newLanguage;
+                _config.Save();
+                
+                // Actualizar el servicio de traducción con el nuevo idioma
+                _translationService.UpdateTargetLanguage(_config.TargetLanguage);
+                
+                PrintColorText($"Idioma objetivo cambiado a: {_config.TargetLanguage}", ValueColor);
+                Console.WriteLine("Presiona cualquier tecla para continuar...");
+                Console.ReadKey(true);
+            }
+        }
     }
     
     // Métodos auxiliares para imprimir texto con colores

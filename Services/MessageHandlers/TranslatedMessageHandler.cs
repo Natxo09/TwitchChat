@@ -54,30 +54,19 @@ public class TranslatedMessageHandler
         {
             string translatedMessage = await _translationService.TranslateMessageAsync(message);
             
-            // Mostrar siempre la traducción cuando está habilitada, pero con indicadores claros
-            if (_translationService.IsEnabled)
+            // Solo mostrar si hay una traducción diferente
+            if (!string.IsNullOrEmpty(translatedMessage) && translatedMessage != message)
             {
-                lock (Console.Out) // Evitar que otros hilos escriban en la consola al mismo tiempo
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    
-                    if (translatedMessage != message)
-                    {
-                        // Mensaje traducido - mostrar solo la flecha y la traducción
-                        Console.WriteLine($"    ↳ {translatedMessage}");
-                    }
-                    
-                    Console.ForegroundColor = originalColor;
-                }
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write("    ↳ ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"{translatedMessage}");
+                Console.ForegroundColor = originalColor;
             }
         }
-        catch (Exception ex)
+        catch
         {
-            // Registrar errores en la traducción en segundo plano
-            if (_translationService.IsEnabled && AppConfig.Load().DebugMode)
-            {
-                WriteError($"Error de traducción: {ex.Message}");
-            }
+            // Ignorar errores de traducción en producción
         }
     }
     
