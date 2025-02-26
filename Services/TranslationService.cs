@@ -24,7 +24,24 @@ public class TranslationService
     }
 
     public bool IsEnabled => _config.TranslationEnabled;
-    public string TargetLanguage => _config.TargetLanguage;
+
+    // Propiedad para el idioma objetivo
+    public string TargetLanguage
+    {
+        get => _config.TargetLanguage;
+        set
+        {
+            if (_config.TargetLanguage != value)
+            {
+                _config.TargetLanguage = value;
+                
+                // Limpiar la caché cuando cambia el idioma objetivo
+                _translationCache.Clear();
+                
+                Console.WriteLine($"[INFO] Idioma objetivo actualizado a: {value}");
+            }
+        }
+    }
 
     public void ToggleTranslation()
     {
@@ -33,16 +50,17 @@ public class TranslationService
         Console.WriteLine($"Translation is now {(_config.TranslationEnabled ? "enabled" : "disabled")}");
     }
 
-    public void SetTargetLanguage(string language)
+    // Propiedad para acceder al modo debug actual
+    private bool IsDebugMode => AppConfig.Load().DebugMode;
+
+    // Propiedad para el modo debug
+    public bool DebugMode
     {
-        if (_config.TargetLanguage != language)
+        get => _config.DebugMode;
+        set
         {
-            _config.TargetLanguage = language;
-            _config.Save();
-            Console.WriteLine($"Target language set to: {_config.TargetLanguage}");
-            
-            // Limpiar caché al cambiar de idioma
-            _translationCache.Clear();
+            _config.DebugMode = value;
+            Console.WriteLine($"[INFO] Modo debug {(value ? "activado" : "desactivado")}");
         }
     }
 
@@ -53,36 +71,36 @@ public class TranslationService
         // No traducir mensajes muy largos para evitar ralentizar el chat
         if (message.Length > _config.MaxMessageLength)
         {
-            if (_config.DebugMode) WriteDebug($"Mensaje demasiado largo para traducir ({message.Length} caracteres)");
+            if (IsDebugMode) WriteDebug($"Mensaje demasiado largo para traducir ({message.Length} caracteres)");
             return message;
         }
         
         // Verificar si el mensaje ya está en caché
         if (_translationCache.TryGetValue(message, out string? cachedTranslation))
         {
-            if (_config.DebugMode) WriteDebug($"Usando traducción en caché");
+            if (IsDebugMode) WriteDebug($"Usando traducción en caché");
             return cachedTranslation;
         }
 
         // Solo mostrar mensajes de depuración si está activado el modo debug
-        if (_config.DebugMode) WriteDebug($"Traduciendo mensaje: {message}");
+        if (IsDebugMode) WriteDebug($"Traduciendo mensaje: {message}");
         
         try
         {
-            if (_config.DebugMode)
+            if (IsDebugMode)
                 WriteDebug($"Traduciendo mensaje: {message}");
             
             // Verificar si el mensaje parece estar en inglés y el idioma destino es inglés
             if (_config.TargetLanguage == "English" && IsLikelyEnglish(message))
             {
-                if (_config.DebugMode) WriteDebug($"El mensaje parece estar ya en inglés, omitiendo traducción");
+                if (IsDebugMode) WriteDebug($"El mensaje parece estar ya en inglés, omitiendo traducción");
                 return message;
             }
             
             // Asegurarse de que los mensajes cortos también se traducen
             if (message.Length < 5 && !ContainsOnlyEmotesOrCommands(message))
             {
-                if (_config.DebugMode) WriteDebug($"Mensaje corto, forzando traducción: {message}");
+                if (IsDebugMode) WriteDebug($"Mensaje corto, forzando traducción: {message}");
             }
             
             // Prompt más estricto para asegurar traducción literal
@@ -124,13 +142,13 @@ public class TranslationService
                         !IsLikelyAlreadyInTargetLanguage(message, _config.TargetLanguage) &&
                         !ContainsOnlyEmotesOrCommands(message))
                     {
-                        if (_config.DebugMode)
+                        if (IsDebugMode)
                             WriteDebug($"La traducción es idéntica al original, posible error");
                         // Intentar una segunda vez con un prompt más directo
                         return await RetryTranslationAsync(message);
                     }
                     
-                    if (_config.DebugMode)
+                    if (IsDebugMode)
                         WriteDebug($"Traducción exitosa: {translatedText}");
                     
                     // Guardar en caché para futuras traducciones
@@ -151,13 +169,13 @@ public class TranslationService
                 }
                 else
                 {
-                    if (_config.DebugMode)
+                    if (IsDebugMode)
                         WriteDebug($"La respuesta no contiene texto traducido");
                 }
             }
             else
             {
-                if (_config.DebugMode)
+                if (IsDebugMode)
                     WriteDebug($"Error en la respuesta HTTP: {response.StatusCode}");
             }
         }
@@ -168,7 +186,7 @@ public class TranslationService
             {
                 WriteError($"Translation error: {ex.Message}");
             }
-            else if (_config.DebugMode)
+            else if (IsDebugMode)
             {
                 WriteDebug($"Error de red o timeout: {ex.GetType().Name}");
             }
@@ -181,7 +199,7 @@ public class TranslationService
     {
         try
         {
-            if (_config.DebugMode) WriteDebug($"Reintentando traducción con prompt simplificado");
+            if (IsDebugMode) WriteDebug($"Reintentando traducción con prompt simplificado");
             
             // Prompt extremadamente directo para forzar la traducción
             var requestData = new
@@ -216,7 +234,7 @@ public class TranslationService
                 
                 if (!string.IsNullOrEmpty(translatedText))
                 {
-                    if (_config.DebugMode)
+                    if (IsDebugMode)
                         WriteDebug($"Segundo intento exitoso: {translatedText}");
                     return translatedText;
                 }
@@ -224,7 +242,7 @@ public class TranslationService
         }
         catch (Exception ex)
         {
-            if (_config.DebugMode) WriteDebug($"Error en segundo intento: {ex.Message}");
+            if (IsDebugMode) WriteDebug($"Error en segundo intento: {ex.Message}");
         }
         
         return message;
@@ -353,5 +371,12 @@ public class TranslationService
         
         // Mostrar siempre este mensaje, incluso sin modo debug
         Console.WriteLine($"[INFO] Idioma objetivo actualizado a: {targetLanguage}");
+    }
+
+    // Añadir un método para actualizar la configuración
+    public void UpdateDebugMode(bool debugMode)
+    {
+        // No necesitamos hacer nada especial, solo informar al usuario
+        Console.WriteLine($"[INFO] Modo debug {(debugMode ? "activado" : "desactivado")}");
     }
 } 

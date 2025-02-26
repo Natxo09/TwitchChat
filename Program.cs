@@ -258,6 +258,8 @@ class Program
                     
                 case '5':
                     _config.DebugMode = !_config.DebugMode;
+                    _translationService.DebugMode = _config.DebugMode;
+                    _config.Save();
                     PrintColorText($"Debug mode is now {(_config.DebugMode ? "enabled" : "disabled")}", ValueColor);
                     Console.WriteLine("Press any key to continue...");
                     Console.ReadKey(true);
@@ -350,11 +352,10 @@ class Program
             string newLanguage = _availableLanguages[langIndex - 1];
             if (_config.TargetLanguage != newLanguage)
             {
+                // Actualizar tanto la configuración como el servicio
                 _config.TargetLanguage = newLanguage;
+                _translationService.TargetLanguage = newLanguage;
                 _config.Save();
-                
-                // Actualizar el servicio de traducción con el nuevo idioma
-                _translationService.UpdateTargetLanguage(_config.TargetLanguage);
                 
                 PrintColorText($"Idioma objetivo cambiado a: {_config.TargetLanguage}", ValueColor);
                 Console.WriteLine("Presiona cualquier tecla para continuar...");
