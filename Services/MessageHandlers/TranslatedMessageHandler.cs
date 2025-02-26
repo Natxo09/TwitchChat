@@ -63,13 +63,8 @@ public class TranslatedMessageHandler
                     
                     if (translatedMessage != message)
                     {
-                        // Mensaje traducido
-                        Console.WriteLine($"    ↳ [{_translationService.TargetLanguage}]: {translatedMessage}");
-                    }
-                    else
-                    {
-                        // Mensaje no traducido (posiblemente ya en el idioma destino o error)
-                        Console.WriteLine($"    ↳ [Sin traducir - posiblemente ya en {_translationService.TargetLanguage}]");
+                        // Mensaje traducido - mostrar solo la flecha y la traducción
+                        Console.WriteLine($"    ↳ {translatedMessage}");
                     }
                     
                     Console.ForegroundColor = originalColor;
@@ -79,7 +74,10 @@ public class TranslatedMessageHandler
         catch (Exception ex)
         {
             // Registrar errores en la traducción en segundo plano
-            WriteError($"Error de traducción: {ex.Message}");
+            if (_translationService.IsEnabled && AppConfig.Load().DebugMode)
+            {
+                WriteError($"Error de traducción: {ex.Message}");
+            }
         }
     }
     
