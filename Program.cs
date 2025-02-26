@@ -20,6 +20,26 @@ class Program
         "Portuguese", "Japanese", "Korean", "Chinese", "Russian"
     };
 
+    // Colores para el menú
+    private static readonly ConsoleColor TitleColor = ConsoleColor.Cyan;
+    private static readonly ConsoleColor HeaderColor = ConsoleColor.Magenta;
+    private static readonly ConsoleColor OptionColor = ConsoleColor.Yellow;
+    private static readonly ConsoleColor ValueColor = ConsoleColor.Green;
+    private static readonly ConsoleColor HighlightColor = ConsoleColor.White;
+
+    // ASCII Art para el logo
+    private static readonly string[] LogoArt = new string[]
+    {
+        @"  _______       _ _       _       _____ _           _   ",
+        @" |__   __|     (_) |     | |     / ____| |         | |  ",
+        @"    | |_      ___| |_ ___| |__  | |    | |__   __ _| |_ ",
+        @"    | \ \ /\ / / | __/ __| '_ \ | |    | '_ \ / _` | __|",
+        @"    | || V  V /| | || (__| | | || |____| | | | (_| | |_ ",
+        @"    |_| \_/\_/ |_|\__\___|_| |_| \_____|_| |_|\__,_|\__|",
+        @"                                                         ",
+        @"              T R A N S L A T O R                        "
+    };
+
     public static ConsoleColor GetUserColor(string username)
     {
         ConsoleColor[] colors =
@@ -48,9 +68,9 @@ class Program
         }
         
         Console.Clear();
-        Console.WriteLine($"Starting Twitch Chat with Auto-Detect to {_config.TargetLanguage} Translation...");
-        Console.WriteLine("Press 'T' to toggle translation on/off");
-        Console.WriteLine("Press 'Q' to quit the application");
+        PrintColorText($"Starting Twitch Chat with Auto-Detect to {_config.TargetLanguage} Translation...", HeaderColor);
+        PrintColorText("Press 'T' to toggle translation on/off", OptionColor);
+        PrintColorText("Press 'Q' to quit the application", OptionColor);
         
         // Start a task to listen for key presses
         _ = Task.Run(() => {
@@ -125,21 +145,33 @@ class Program
     
     private static bool ShowConfigMenu()
     {
-        Console.WriteLine("=== Twitch Chat Translator ===");
+        Console.Clear();
+        
+        // Mostrar el logo ASCII
+        foreach (var line in LogoArt)
+        {
+            PrintColorText(line, TitleColor);
+        }
+        
         Console.WriteLine();
-        Console.WriteLine("Current Configuration:");
-        Console.WriteLine($"- Twitch Channel: {_config.TwitchChannel}");
-        Console.WriteLine($"- Target Language: {_config.TargetLanguage}");
-        Console.WriteLine($"- Translation Enabled: {_config.TranslationEnabled}");
-        Console.WriteLine($"- Performance Settings: Max Length {_config.MaxMessageLength} chars, Cache Size {_config.CacheSize}");
-        Console.WriteLine($"- Debug Mode: {_config.DebugMode}");
+        PrintColorText("=== Twitch Chat Translator ===", HeaderColor);
         Console.WriteLine();
-        Console.WriteLine("Do you want to change the configuration?");
-        Console.WriteLine("1. Yes, configure now");
-        Console.WriteLine("2. No, continue with current settings");
-        Console.WriteLine("3. Exit");
+        
+        PrintColorText("Current Configuration:", HighlightColor);
+        PrintConfigItem("Twitch Channel", _config.TwitchChannel);
+        PrintConfigItem("Target Language", _config.TargetLanguage);
+        PrintConfigItem("Translation Enabled", _config.TranslationEnabled.ToString());
+        PrintConfigItem("Performance Settings", $"Max Length {_config.MaxMessageLength} chars, Cache Size {_config.CacheSize}");
+        PrintConfigItem("Debug Mode", _config.DebugMode.ToString());
+        
         Console.WriteLine();
-        Console.Write("Select an option (1-3): ");
+        PrintColorText("Do you want to change the configuration?", HighlightColor);
+        PrintMenuOption("1", "Yes, configure now");
+        PrintMenuOption("2", "No, continue with current settings");
+        PrintMenuOption("3", "Exit");
+        
+        Console.WriteLine();
+        PrintColorText("Select an option (1-3): ", OptionColor);
         
         while (true)
         {
@@ -159,7 +191,7 @@ class Program
                     return true; // Exit
                     
                 default:
-                    Console.Write("Invalid option. Select an option (1-3): ");
+                    PrintColorText("Invalid option. Select an option (1-3): ", OptionColor);
                     break;
             }
         }
@@ -172,16 +204,28 @@ class Program
         while (!exit)
         {
             Console.Clear();
-            Console.WriteLine("=== Twitch Chat Translator Configuration ===");
+            
+            // Mostrar un logo más pequeño en la pantalla de configuración
+            PrintColorText(@"  _______       _ _       _       _____ _           _   ", TitleColor);
+            PrintColorText(@" |__   __|     (_) |     | |     / ____| |         | |  ", TitleColor);
+            PrintColorText(@"    | | _ __ __ _ _ _ __ | |__ _| |    | |__   __ _| |_ ", TitleColor);
+            PrintColorText(@"    | || '__/ _` | | '_ \| __/ _` |    | '_ \ / _` | __|", TitleColor);
+            PrintColorText(@"    | || | | (_| | | | | | || (_| |____| | | | (_| | |_ ", TitleColor);
+            PrintColorText(@"    |_||_|  \__,_|_|_| |_|\__\__,_\_____|_| |_|\__,_|\__|", TitleColor);
             Console.WriteLine();
-            Console.WriteLine($"1. Twitch Channel: {_config.TwitchChannel}");
-            Console.WriteLine($"2. Target Language: {_config.TargetLanguage}");
-            Console.WriteLine($"3. Translation Enabled: {_config.TranslationEnabled}");
-            Console.WriteLine($"4. Performance Settings");
-            Console.WriteLine($"5. Debug Mode: {_config.DebugMode}");
-            Console.WriteLine("6. Save and Continue");
+            
+            PrintColorText("=== Twitch Chat Translator Configuration ===", HeaderColor);
             Console.WriteLine();
-            Console.Write("Select an option (1-6): ");
+            
+            PrintMenuOption("1", $"Twitch Channel: {_config.TwitchChannel}");
+            PrintMenuOption("2", $"Target Language: {_config.TargetLanguage}");
+            PrintMenuOption("3", $"Translation Enabled: {_config.TranslationEnabled}");
+            PrintMenuOption("4", "Performance Settings");
+            PrintMenuOption("5", $"Debug Mode: {_config.DebugMode}");
+            PrintMenuOption("6", "Save and Continue");
+            
+            Console.WriteLine();
+            PrintColorText("Select an option (1-6): ", OptionColor);
             
             var key = Console.ReadKey(true);
             Console.WriteLine(key.KeyChar);
@@ -189,7 +233,7 @@ class Program
             switch (key.KeyChar)
             {
                 case '1':
-                    Console.Write("Enter new Twitch channel name: ");
+                    PrintColorText("Enter new Twitch channel name: ", OptionColor);
                     string? channel = Console.ReadLine();
                     if (!string.IsNullOrWhiteSpace(channel))
                     {
@@ -199,7 +243,7 @@ class Program
                     
                 case '2':
                     ShowLanguageOptions();
-                    Console.Write("Select a language (1-10): ");
+                    PrintColorText("Select a language (1-10): ", OptionColor);
                     if (int.TryParse(Console.ReadLine(), out int langIndex) && 
                         langIndex >= 1 && langIndex <= _availableLanguages.Count)
                     {
@@ -209,6 +253,9 @@ class Program
                     
                 case '3':
                     _config.TranslationEnabled = !_config.TranslationEnabled;
+                    PrintColorText($"Translation is now {(_config.TranslationEnabled ? "enabled" : "disabled")}", ValueColor);
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey(true);
                     break;
                     
                 case '4':
@@ -217,7 +264,7 @@ class Program
                     
                 case '5':
                     _config.DebugMode = !_config.DebugMode;
-                    Console.WriteLine($"Debug mode is now {(_config.DebugMode ? "enabled" : "disabled")}");
+                    PrintColorText($"Debug mode is now {(_config.DebugMode ? "enabled" : "disabled")}", ValueColor);
                     Console.WriteLine("Press any key to continue...");
                     Console.ReadKey(true);
                     break;
@@ -233,17 +280,22 @@ class Program
     private static void ConfigurePerformance()
     {
         Console.Clear();
-        Console.WriteLine("=== Performance Settings ===");
+        PrintColorText("=== Performance Settings ===", HeaderColor);
         Console.WriteLine();
-        Console.WriteLine("1. Max Message Length (characters to translate)");
-        Console.WriteLine($"   Current: {_config.MaxMessageLength} chars");
-        Console.WriteLine("2. Cache Size (number of messages to cache)");
-        Console.WriteLine($"   Current: {_config.CacheSize} messages");
-        Console.WriteLine("3. Timeout (seconds to wait for translation)");
-        Console.WriteLine($"   Current: {_config.TimeoutSeconds} seconds");
-        Console.WriteLine("4. Back to main menu");
+        
+        PrintMenuOption("1", "Max Message Length (characters to translate)");
+        PrintColorText($"   Current: {_config.MaxMessageLength} chars", ValueColor);
+        
+        PrintMenuOption("2", "Cache Size (number of messages to cache)");
+        PrintColorText($"   Current: {_config.CacheSize} messages", ValueColor);
+        
+        PrintMenuOption("3", "Timeout (seconds to wait for translation)");
+        PrintColorText($"   Current: {_config.TimeoutSeconds} seconds", ValueColor);
+        
+        PrintMenuOption("4", "Back to main menu");
+        
         Console.WriteLine();
-        Console.Write("Select an option (1-4): ");
+        PrintColorText("Select an option (1-4): ", OptionColor);
         
         var key = Console.ReadKey(true);
         Console.WriteLine(key.KeyChar);
@@ -251,7 +303,7 @@ class Program
         switch (key.KeyChar)
         {
             case '1':
-                Console.Write("Enter max message length (50-500): ");
+                PrintColorText("Enter max message length (50-500): ", OptionColor);
                 if (int.TryParse(Console.ReadLine(), out int maxLength) && 
                     maxLength >= 50 && maxLength <= 500)
                 {
@@ -260,7 +312,7 @@ class Program
                 break;
                 
             case '2':
-                Console.Write("Enter cache size (10-1000): ");
+                PrintColorText("Enter cache size (10-1000): ", OptionColor);
                 if (int.TryParse(Console.ReadLine(), out int cacheSize) && 
                     cacheSize >= 10 && cacheSize <= 1000)
                 {
@@ -269,7 +321,7 @@ class Program
                 break;
                 
             case '3':
-                Console.Write("Enter timeout in seconds (1-30): ");
+                PrintColorText("Enter timeout in seconds (1-30): ", OptionColor);
                 if (int.TryParse(Console.ReadLine(), out int timeout) && 
                     timeout >= 1 && timeout <= 30)
                 {
@@ -288,8 +340,37 @@ class Program
         Console.WriteLine("\nAvailable Languages:");
         for (int i = 0; i < _availableLanguages.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {_availableLanguages[i]}");
+            PrintMenuOption($"{i + 1}", _availableLanguages[i]);
         }
         Console.WriteLine();
+    }
+    
+    // Métodos auxiliares para imprimir texto con colores
+    private static void PrintColorText(string text, ConsoleColor color)
+    {
+        var originalColor = Console.ForegroundColor;
+        Console.ForegroundColor = color;
+        Console.WriteLine(text);
+        Console.ForegroundColor = originalColor;
+    }
+    
+    private static void PrintConfigItem(string label, string value)
+    {
+        var originalColor = Console.ForegroundColor;
+        Console.ForegroundColor = OptionColor;
+        Console.Write($"- {label}: ");
+        Console.ForegroundColor = ValueColor;
+        Console.WriteLine(value);
+        Console.ForegroundColor = originalColor;
+    }
+    
+    private static void PrintMenuOption(string number, string text)
+    {
+        var originalColor = Console.ForegroundColor;
+        Console.ForegroundColor = HighlightColor;
+        Console.Write($"{number}. ");
+        Console.ForegroundColor = OptionColor;
+        Console.WriteLine(text);
+        Console.ForegroundColor = originalColor;
     }
 }
