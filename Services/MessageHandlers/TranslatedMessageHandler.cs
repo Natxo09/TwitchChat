@@ -12,7 +12,7 @@ public class TranslatedMessageHandler
         _badgeService = badgeService;
     }
 
-    public async Task HandleMessageAsync(string message, string username)
+    public void HandleMessage(string message, string username)
     {
         try
         {
@@ -21,7 +21,7 @@ public class TranslatedMessageHandler
                 ? _badgeService.GetBadges(message.Split("badges=")[1].Split(";")[0])
                 : "";
 
-            // Display original message
+            // Display original message immediately
             Console.Write($"[{DateTime.Now:HH:mm:ss}] ");
 
             if (!string.IsNullOrEmpty(badges))
@@ -35,12 +35,29 @@ public class TranslatedMessageHandler
             Console.ForegroundColor = originalColor;
             Console.WriteLine($": {chatMessage}");
 
-            // Display translated message if translation is enabled
+            // Start translation in background if enabled
             if (_translationService.IsEnabled)
             {
-                string translatedMessage = await _translationService.TranslateMessageAsync(chatMessage);
-                
-                if (translatedMessage != chatMessage)
+                // No await here - let translation happen in background
+                _ = TranslateAndDisplayAsync(chatMessage, originalColor);
+            }
+        }
+        catch
+        {
+            // Ignore malformed messages
+        }
+    }
+    
+    private async Task TranslateAndDisplayAsync(string message, ConsoleColor originalColor)
+    {
+        try
+        {
+            string translatedMessage = await _translationService.TranslateMessageAsync(message);
+            
+            // Solo mostrar si la traducción es diferente del mensaje original
+            if (translatedMessage != message)
+            {
+                lock (Console.Out) // Evitar que otros hilos escriban en la consola al mismo tiempo
                 {
                     Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.WriteLine($"    ↳ {translatedMessage}");
@@ -50,25 +67,7 @@ public class TranslatedMessageHandler
         }
         catch
         {
-            // Ignore malformed messages
+            // Ignorar errores en la traducción en segundo plano
         }
-    }
-
-    private string GetFlagEmoji(string language)
-    {
-        return language.ToLower() switch
-        {
-            "english" => "🇬🇧",
-            "spanish" => "🇪🇸",
-            "french" => "🇫🇷",
-            "german" => "🇩🇪",
-            "italian" => "🇮🇹",
-            "portuguese" => "🇵🇹",
-            "japanese" => "🇯🇵",
-            "korean" => "🇰🇷",
-            "chinese" => "🇨🇳",
-            "russian" => "🇷🇺",
-            _ => "🌐"
-        };
     }
 } 

@@ -11,6 +11,11 @@ public class AppConfig
     public string TargetLanguage { get; set; } = "English";
     public bool TranslationEnabled { get; set; } = true;
     
+    // Nuevas opciones para controlar la velocidad
+    public int MaxMessageLength { get; set; } = 200;
+    public int CacheSize { get; set; } = 100;
+    public int TimeoutSeconds { get; set; } = 5;
+    
     public static AppConfig Load()
     {
         try

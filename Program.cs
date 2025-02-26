@@ -48,7 +48,7 @@ class Program
         }
         
         Console.Clear();
-        Console.WriteLine($"Starting Twitch Chat with Spanish to {_config.TargetLanguage} Translation...");
+        Console.WriteLine($"Starting Twitch Chat with Auto-Detect to {_config.TargetLanguage} Translation...");
         Console.WriteLine("Press 'T' to toggle translation on/off");
         Console.WriteLine("Press 'Q' to quit the application");
         
@@ -81,7 +81,7 @@ class Program
         await writer.WriteLineAsync($"JOIN #{_config.TwitchChannel}");
         
         Console.WriteLine($"Connected to channel: {_config.TwitchChannel}");
-        Console.WriteLine($"Showing chat with Spanish to {_config.TargetLanguage} translation (CTRL+C to exit...)");
+        Console.WriteLine($"Showing chat with automatic language detection and translation to {_config.TargetLanguage} (CTRL+C to exit...)");
 
         while (true)
         {
@@ -113,7 +113,7 @@ class Program
                     if (_bitsHandler.HandleMessage(message, username)) continue;
 
                     // Use the translated message handler instead of direct console output
-                    await _translatedMessageHandler.HandleMessageAsync(message, username);
+                    _translatedMessageHandler.HandleMessage(message, username);
                 }
                 catch
                 {
@@ -131,6 +131,7 @@ class Program
         Console.WriteLine($"- Twitch Channel: {_config.TwitchChannel}");
         Console.WriteLine($"- Target Language: {_config.TargetLanguage}");
         Console.WriteLine($"- Translation Enabled: {_config.TranslationEnabled}");
+        Console.WriteLine($"- Performance Settings: Max Length {_config.MaxMessageLength} chars, Cache Size {_config.CacheSize}");
         Console.WriteLine();
         Console.WriteLine("Do you want to change the configuration?");
         Console.WriteLine("1. Yes, configure now");
@@ -175,9 +176,10 @@ class Program
             Console.WriteLine($"1. Twitch Channel: {_config.TwitchChannel}");
             Console.WriteLine($"2. Target Language: {_config.TargetLanguage}");
             Console.WriteLine($"3. Translation Enabled: {_config.TranslationEnabled}");
-            Console.WriteLine("4. Save and Continue");
+            Console.WriteLine($"4. Performance Settings");
+            Console.WriteLine("5. Save and Continue");
             Console.WriteLine();
-            Console.Write("Select an option (1-4): ");
+            Console.Write("Select an option (1-5): ");
             
             var key = Console.ReadKey(true);
             Console.WriteLine(key.KeyChar);
@@ -208,10 +210,67 @@ class Program
                     break;
                     
                 case '4':
+                    ConfigurePerformance();
+                    break;
+                    
+                case '5':
                     _config.Save();
                     exit = true;
                     break;
             }
+        }
+    }
+    
+    private static void ConfigurePerformance()
+    {
+        Console.Clear();
+        Console.WriteLine("=== Performance Settings ===");
+        Console.WriteLine();
+        Console.WriteLine("1. Max Message Length (characters to translate)");
+        Console.WriteLine($"   Current: {_config.MaxMessageLength} chars");
+        Console.WriteLine("2. Cache Size (number of messages to cache)");
+        Console.WriteLine($"   Current: {_config.CacheSize} messages");
+        Console.WriteLine("3. Timeout (seconds to wait for translation)");
+        Console.WriteLine($"   Current: {_config.TimeoutSeconds} seconds");
+        Console.WriteLine("4. Back to main menu");
+        Console.WriteLine();
+        Console.Write("Select an option (1-4): ");
+        
+        var key = Console.ReadKey(true);
+        Console.WriteLine(key.KeyChar);
+        
+        switch (key.KeyChar)
+        {
+            case '1':
+                Console.Write("Enter max message length (50-500): ");
+                if (int.TryParse(Console.ReadLine(), out int maxLength) && 
+                    maxLength >= 50 && maxLength <= 500)
+                {
+                    _config.MaxMessageLength = maxLength;
+                }
+                break;
+                
+            case '2':
+                Console.Write("Enter cache size (10-1000): ");
+                if (int.TryParse(Console.ReadLine(), out int cacheSize) && 
+                    cacheSize >= 10 && cacheSize <= 1000)
+                {
+                    _config.CacheSize = cacheSize;
+                }
+                break;
+                
+            case '3':
+                Console.Write("Enter timeout in seconds (1-30): ");
+                if (int.TryParse(Console.ReadLine(), out int timeout) && 
+                    timeout >= 1 && timeout <= 30)
+                {
+                    _config.TimeoutSeconds = timeout;
+                }
+                break;
+                
+            case '4':
+                // Just return to main menu
+                break;
         }
     }
     
