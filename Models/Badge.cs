@@ -25,17 +25,19 @@ public class Badge
             if (File.Exists(iconPath))
             {
                 byte[] imageBytes = File.ReadAllBytes(iconPath);
-                string base64Image = Convert.ToBase64String(imageBytes);
                 
+                // Para diagnóstico (puedes quitar esto después)
+                //Console.WriteLine($"Badge: {Type}, Path: {iconPath}, Size: {imageBytes.Length} bytes");
+                
+                string base64Image = Convert.ToBase64String(imageBytes);
                 string kittyProtocol = $"\x1b_Ga=T,f=100,s={imageBytes.Length};{base64Image}\x1b\\";
                 string iterm2Protocol = $"\u001B]1337;File=inline=1:{base64Image}\u0007";
-                
                 return kittyProtocol + iterm2Protocol;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Si algo falla, usar el emoji
+            Console.WriteLine($"Error loading badge {Type}: {ex.Message}");
         }
         return FallbackEmoji;
     }
