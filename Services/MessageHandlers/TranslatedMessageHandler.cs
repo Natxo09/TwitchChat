@@ -1,10 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 public class TranslatedMessageHandler
 {
     private readonly TranslationService _translationService;
     private readonly BadgeService _badgeService;
+    // Regular expression to detect URLs in chat messages
+    private static readonly Regex UrlRegex = new Regex(@"(https?:\/\/[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public TranslatedMessageHandler(TranslationService translationService, BadgeService badgeService)
     {
@@ -33,7 +36,11 @@ public class TranslatedMessageHandler
             Console.ForegroundColor = Program.GetUserColor(username);
             Console.Write($"{username}");
             Console.ForegroundColor = originalColor;
-            Console.WriteLine($": {chatMessage}");
+            
+            // Instead of directly writing the message, process it to highlight URLs
+            Console.Write(": ");
+            WriteMessageWithHighlightedLinks(chatMessage, originalColor);
+            Console.WriteLine();
 
             // Start translation in background if enabled
             if (_translationService.IsEnabled)
@@ -45,6 +52,30 @@ public class TranslatedMessageHandler
         catch
         {
             // Ignore malformed messages
+        }
+    }
+    
+    // Helper method to write a message with highlighted links
+    private void WriteMessageWithHighlightedLinks(string message, ConsoleColor originalColor)
+    {
+        int lastIndex = 0;
+        foreach (Match match in UrlRegex.Matches(message))
+        {
+            // Write the text before the URL
+            Console.Write(message.Substring(lastIndex, match.Index - lastIndex));
+            
+            // Write the URL in purple and italic
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write($"\u001B[3m{match.Value}\u001B[0m"); // \u001B[3m for italic, \u001B[0m to reset
+            Console.ForegroundColor = originalColor;
+            
+            lastIndex = match.Index + match.Length;
+        }
+        
+        // Write any remaining text after the last URL
+        if (lastIndex < message.Length)
+        {
+            Console.Write(message.Substring(lastIndex));
         }
     }
     
@@ -60,7 +91,11 @@ public class TranslatedMessageHandler
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write("    ↳ ");
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine($"{translatedMessage}");
+                
+                // Also highlight links in the translated message
+                WriteMessageWithHighlightedLinks(translatedMessage, ConsoleColor.White);
+                Console.WriteLine();
+                
                 Console.ForegroundColor = originalColor;
             }
         }
