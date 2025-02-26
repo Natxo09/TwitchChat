@@ -132,6 +132,7 @@ class Program
         Console.WriteLine($"- Target Language: {_config.TargetLanguage}");
         Console.WriteLine($"- Translation Enabled: {_config.TranslationEnabled}");
         Console.WriteLine($"- Performance Settings: Max Length {_config.MaxMessageLength} chars, Cache Size {_config.CacheSize}");
+        Console.WriteLine($"- Debug Mode: {_config.DebugMode}");
         Console.WriteLine();
         Console.WriteLine("Do you want to change the configuration?");
         Console.WriteLine("1. Yes, configure now");
@@ -177,9 +178,10 @@ class Program
             Console.WriteLine($"2. Target Language: {_config.TargetLanguage}");
             Console.WriteLine($"3. Translation Enabled: {_config.TranslationEnabled}");
             Console.WriteLine($"4. Performance Settings");
-            Console.WriteLine("5. Save and Continue");
+            Console.WriteLine($"5. Debug Mode: {_config.DebugMode}");
+            Console.WriteLine("6. Save and Continue");
             Console.WriteLine();
-            Console.Write("Select an option (1-5): ");
+            Console.Write("Select an option (1-6): ");
             
             var key = Console.ReadKey(true);
             Console.WriteLine(key.KeyChar);
@@ -214,6 +216,13 @@ class Program
                     break;
                     
                 case '5':
+                    _config.DebugMode = !_config.DebugMode;
+                    Console.WriteLine($"Debug mode is now {(_config.DebugMode ? "enabled" : "disabled")}");
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey(true);
+                    break;
+                    
+                case '6':
                     _config.Save();
                     exit = true;
                     break;

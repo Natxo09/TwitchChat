@@ -54,20 +54,56 @@ public class TranslatedMessageHandler
         {
             string translatedMessage = await _translationService.TranslateMessageAsync(message);
             
-            // Solo mostrar si la traducción es diferente del mensaje original
-            if (translatedMessage != message)
+            // Mostrar siempre la traducción cuando está habilitada, pero con indicadores claros
+            if (_translationService.IsEnabled)
             {
                 lock (Console.Out) // Evitar que otros hilos escriban en la consola al mismo tiempo
                 {
                     Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine($"    ↳ {translatedMessage}");
+                    
+                    if (translatedMessage != message)
+                    {
+                        // Mensaje traducido
+                        Console.WriteLine($"    ↳ [{_translationService.TargetLanguage}]: {translatedMessage}");
+                    }
+                    else
+                    {
+                        // Mensaje no traducido (posiblemente ya en el idioma destino o error)
+                        Console.WriteLine($"    ↳ [Sin traducir - posiblemente ya en {_translationService.TargetLanguage}]");
+                    }
+                    
                     Console.ForegroundColor = originalColor;
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignorar errores en la traducción en segundo plano
+            // Registrar errores en la traducción en segundo plano
+            WriteError($"Error de traducción: {ex.Message}");
+        }
+    }
+    
+    // Método para escribir mensajes de depuración en color
+    private void WriteDebug(string message)
+    {
+        lock (Console.Out) // Evitar que otros hilos escriban en la consola al mismo tiempo
+        {
+            var originalColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"[DEBUG] {message}");
+            Console.ForegroundColor = originalColor;
+        }
+    }
+    
+    // Método para escribir errores en color
+    private void WriteError(string message)
+    {
+        lock (Console.Out) // Evitar que otros hilos escriban en la consola al mismo tiempo
+        {
+            var originalColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"    ↳ [ERROR] {message}");
+            Console.ForegroundColor = originalColor;
         }
     }
 } 

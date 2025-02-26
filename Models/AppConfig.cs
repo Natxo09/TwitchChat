@@ -16,6 +16,9 @@ public class AppConfig
     public int CacheSize { get; set; } = 100;
     public int TimeoutSeconds { get; set; } = 5;
     
+    // Opción para activar/desactivar el modo de depuración
+    public bool DebugMode { get; set; } = false;
+    
     public static AppConfig Load()
     {
         try
