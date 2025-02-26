@@ -4,7 +4,12 @@ public class BadgeService
     {
         new Badge("moderator", "moderator", "🛡️ "),
         new Badge("sub", "sub", "⭐ "),
-        new Badge("vip", "vip", "💎 ")
+        new Badge("vip", "vip", "💎 "),
+        new Badge("broadcaster", "broadcaster", "📺 "),
+        new Badge("dj", "dj", "🎧 "),
+        new Badge("partner", "partner", "✓ "),
+        new Badge("turbo", "turbo", "🚀 "),
+        new Badge("staff", "twitchstaff", "🔧 ")
     };
 
     public string GetBadges(string badgePart)
