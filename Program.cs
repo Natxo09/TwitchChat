@@ -88,6 +88,8 @@ class Program
                 if (key.Key == ConsoleKey.T)
                 {
                     _translationService.ToggleTranslation();
+                    // Actualizar Discord Rich Presence cuando cambia el estado de traducción
+                    _discordService.UpdatePresence();
                 }
                 else if (key.Key == ConsoleKey.Q)
                 {
@@ -249,6 +251,8 @@ class Program
                     if (!string.IsNullOrWhiteSpace(channel))
                     {
                         _config.TwitchChannel = channel.ToLower();
+                        // Actualizar Discord Rich Presence cuando cambia el canal
+                        _discordService.UpdateChannel(_config.TwitchChannel);
                     }
                     break;
                     
@@ -424,6 +428,9 @@ class Program
                 _translationService.TargetLanguage = newLanguage;
                 _config.Save();
                 
+                // Actualizar Discord Rich Presence cuando cambia el idioma
+                _discordService.UpdateLanguage(newLanguage);
+                
                 PrintColorText($"Idioma objetivo cambiado a: {_config.TargetLanguage}", ValueColor);
                 Console.WriteLine("Presiona cualquier tecla para continuar...");
                 Console.ReadKey(true);
@@ -468,6 +475,8 @@ class Program
             if (initialized)
             {
                 Console.WriteLine("Discord Rich Presence initialized successfully");
+                // Mostrar información de depuración sobre los assets
+                _discordService.LogAssetInfo();
             }
             else
             {
