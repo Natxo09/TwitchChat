@@ -19,6 +19,11 @@ public class AppConfig
     // Opción para activar/desactivar el modo de depuración
     public bool DebugMode { get; set; } = false;
     
+    // Discord Rich Presence settings
+    public bool DiscordRichPresenceEnabled { get; set; } = true;
+    public string DiscordAppId { get; set; } = "1344460346257047622"; // This should be set by the user
+    public string GitHubRepoUrl { get; set; } = "https://github.com/natxo09/TwitchChat";
+    
     public static AppConfig Load()
     {
         try

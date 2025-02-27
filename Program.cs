@@ -13,6 +13,7 @@ class Program
     private static readonly TranslationService _translationService = new();
     private static readonly TranslatedMessageHandler _translatedMessageHandler = new(_translationService, _badgeService);
     private static readonly AppConfig _config = AppConfig.Load();
+    private static readonly DiscordRichPresenceService _discordService = new(_config);
 
     private static readonly List<string> _availableLanguages = new()
     {
@@ -60,6 +61,9 @@ class Program
             _config.Save();
         }
         
+        // Initialize Discord Rich Presence
+        InitializeDiscordRichPresence();
+        
         // Show configuration options first
         if (ShowConfigMenu())
         {
@@ -67,10 +71,14 @@ class Program
             return;
         }
         
+        // Update Discord Rich Presence with the selected channel and language
+        _discordService.UpdatePresence();
+        
         Console.Clear();
         PrintColorText($"Starting Twitch Chat with Auto-Detect to {_config.TargetLanguage} Translation...", HeaderColor);
         PrintColorText("Press 'T' to toggle translation on/off", OptionColor);
         PrintColorText("Press 'Q' to quit the application", OptionColor);
+        PrintColorText("Discord Rich Presence is active", OptionColor);
         
         // Start a task to listen for key presses
         _ = Task.Run(() => {
@@ -163,6 +171,8 @@ class Program
         PrintConfigItem("Translation Enabled", _config.TranslationEnabled.ToString());
         PrintConfigItem("Performance Settings", $"Max Length {_config.MaxMessageLength} chars, Cache Size {_config.CacheSize}");
         PrintConfigItem("Debug Mode", _config.DebugMode.ToString());
+        PrintConfigItem("Discord Rich Presence", _config.DiscordRichPresenceEnabled ? 
+            (_config.DiscordAppId == "" ? "Enabled (No App ID set)" : "Enabled") : "Disabled");
         
         Console.WriteLine();
         PrintColorText("Do you want to change the configuration?", HighlightColor);
@@ -222,10 +232,11 @@ class Program
             PrintMenuOption("3", $"Translation Enabled: {_config.TranslationEnabled}");
             PrintMenuOption("4", "Performance Settings");
             PrintMenuOption("5", $"Debug Mode: {_config.DebugMode}");
-            PrintMenuOption("6", "Save and Continue");
+            PrintMenuOption("6", "Discord Rich Presence Settings");
+            PrintMenuOption("7", "Save and Continue");
             
             Console.WriteLine();
-            PrintColorText("Select an option (1-6): ", OptionColor);
+            PrintColorText("Select an option (1-7): ", OptionColor);
             
             var key = Console.ReadKey(true);
             Console.WriteLine(key.KeyChar);
@@ -266,10 +277,66 @@ class Program
                     break;
                     
                 case '6':
+                    ConfigureDiscordRichPresence();
+                    break;
+                    
+                case '7':
                     _config.Save();
                     exit = true;
                     break;
             }
+        }
+    }
+    
+    private static void ConfigureDiscordRichPresence()
+    {
+        Console.Clear();
+        PrintColorText("=== Discord Rich Presence Settings ===", HeaderColor);
+        Console.WriteLine();
+        
+        PrintColorText("Discord Rich Presence allows showing your Twitch Chat Translator activity in your Discord status.", OptionColor);
+        Console.WriteLine();
+        
+        PrintMenuOption("1", $"Discord Rich Presence Enabled: {_config.DiscordRichPresenceEnabled}");
+        PrintMenuOption("2", "Discord Application ID");
+        PrintColorText($"   Current: {(_config.DiscordAppId == "" ? "Not set" : _config.DiscordAppId)}", ValueColor);
+        PrintMenuOption("3", "Back to main menu");
+        
+        Console.WriteLine();
+        PrintColorText("Select an option (1-3): ", OptionColor);
+        
+        var key = Console.ReadKey(true);
+        Console.WriteLine(key.KeyChar);
+        
+        switch (key.KeyChar)
+        {
+            case '1':
+                _config.DiscordRichPresenceEnabled = !_config.DiscordRichPresenceEnabled;
+                PrintColorText($"Discord Rich Presence is now {(_config.DiscordRichPresenceEnabled ? "enabled" : "disabled")}", ValueColor);
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey(true);
+                break;
+                
+            case '2':
+                PrintColorText("To get a Discord Application ID:", OptionColor);
+                PrintColorText("1. Go to https://discord.com/developers/applications", ValueColor);
+                PrintColorText("2. Create a new application", ValueColor);
+                PrintColorText("3. Copy the Application ID", ValueColor);
+                Console.WriteLine();
+                PrintColorText("Enter Discord Application ID: ", OptionColor);
+                string? appId = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(appId))
+                {
+                    _config.DiscordAppId = appId;
+                    PrintColorText("Discord Application ID saved. You'll need to restart the application for changes to take effect.", ValueColor);
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey(true);
+                }
+                break;
+                
+            case '3':
+                // Just return to main menu
+                break;
         }
     }
     
@@ -391,5 +458,25 @@ class Program
         Console.ForegroundColor = OptionColor;
         Console.WriteLine(text);
         Console.ForegroundColor = originalColor;
+    }
+    
+    private static void InitializeDiscordRichPresence()
+    {
+        try
+        {
+            bool initialized = _discordService.Initialize();
+            if (initialized)
+            {
+                Console.WriteLine("Discord Rich Presence initialized successfully");
+            }
+            else
+            {
+                Console.WriteLine("Failed to initialize Discord Rich Presence");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing Discord Rich Presence: {ex.Message}");
+        }
     }
 }
